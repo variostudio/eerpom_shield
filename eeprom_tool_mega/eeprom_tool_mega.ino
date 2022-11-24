@@ -2,12 +2,17 @@
 #define addr_pin_cnt 16
 
 #define ce_pin 23 //CE# - chip enable, active low
-#define oe_pin 20 //OE# - output enable, active low
+#define oe_pin 21 //OE# - output enable, active low
 #define we_pin 22 //WE# - write enable, active low
+#define write_led 43
+#define read_led 41
 
 int currentAddress = 0;
 int addr_pins[] = {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17};
-int data_pins[] = {24,25,26,2ww7,28,29,30,31};
+int data_pins[] = {24,25,26,27,28,29,30,31};
+
+
+byte data[] = {0x1a, 0xa2, 0x15, 0xce, 0x20};
 
 void toAddressPins(int value) {
   for (int i = 0, mask = 1; i < addr_pin_cnt; i++, mask = mask << 1) {
@@ -20,8 +25,9 @@ void toAddressPins(int value) {
 }
 
 byte readByte() {
+  readLedOn();
   // read the current eight-bit byte being output by the ROM ...
-  byte res = 0;x
+  byte res = 0;
 
   for (int i = 0, mask = 1; i < data_pin_cnt; i++, mask = mask << 1) {
     if (digitalRead(data_pins[i]) == 1) {
@@ -29,6 +35,7 @@ byte readByte() {
     }
   }
   
+  readLedOff();
   return(res);
 }
 
@@ -45,6 +52,7 @@ void dataIn() {
 }
 
 void writeByte(byte value) {
+  writeLedOn();
   digitalWrite(oe_pin, HIGH);
   digitalWrite(ce_pin, LOW);
 
@@ -61,6 +69,7 @@ void writeByte(byte value) {
   delay(10);
   digitalWrite(we_pin, HIGH);  
   delay(10);
+  writeLedOff();
 }
 
 void programByte(int addr, byte val) {
@@ -183,6 +192,25 @@ void initPins() {
 
   digitalWrite(ce_pin, LOW);  //Activate the chip
   digitalWrite(oe_pin, HIGH);  //Deactivate output
+
+  pinMode(write_led, OUTPUT);
+  pinMode(read_led, OUTPUT);
+}
+
+void readLedOn() {
+  digitalWrite(read_led, HIGH);
+}
+
+void readLedOff() {
+  digitalWrite(read_led, LOW);
+}
+
+void writeLedOn() {
+  digitalWrite(write_led, HIGH);
+}
+
+void writeLedOff() {
+  digitalWrite(write_led, LOW);
 }
 
 void setup() {
@@ -190,20 +218,17 @@ void setup() {
 
   Serial.begin(9600); 
 
-  // getChipId();
-  // dataOut();
-  // sectorErase();
-  // chipErase();
+  dataOut();
+  chipErase();
 
-  // delay(1000);
+  delay(1000);
 
-  // programByte(0, 0x15);
-  // programByte(1, 0x11);
-  // programByte(2, 0x12);
-  // programByte(3, 0x13);
+  for (int idx=0; idx<5; idx++) {
+    programByte(idx, data[idx]);
+  }
   
-  // delay(1000);
-  // initPins();
+  delay(1000);
+  initPins();
 
   dataIn();
 
@@ -231,24 +256,4 @@ void setup() {
 
 
 void loop() {
-  // toAddressPins(currentAddress); //Set pin address 
-
-  // digitalWrite(oe_pin, LOW);  //Active output
-
-  // byte res = readByte(); //Read byte
-
-  // digitalWrite(oe_pin, HIGH);  //Deactivate output
-
-  // Serial.print("Address : ");
-  // Serial.print(currentAddress);
-  // Serial.print(", value : ");
-  // Serial.println(res);
-
-  // currentAddress++;
-
-  // if (currentAddress > 32) {
-  //   currentAddress = 0;
-  // }
-
-  // delay(100);
 }
